@@ -326,24 +326,36 @@ class EmailManager:
                 candidate_case_map: Dict[bytes, Set[str]] = {}
 
                 # Ejecutar búsqueda específica por palabra clave para cada caso habilitado
+                logger.log("=== INICIANDO BÚSQUEDA IMAP POR KEYWORDS ===", level="INFO")
                 for case_name in allowed_cases:
                     keywords = case_keywords.get(case_name, [])
+                    if not keywords:
+                        logger.log(f"⚠ {case_name}: NO tiene keywords configuradas", level="WARNING")
+                        continue
+
+                    logger.log(f"Buscando con {case_name}: {keywords}", level="INFO")
+
                     for keyword in keywords:
                         prepared_keyword = self._prepare_keyword_for_search(keyword)
                         if not prepared_keyword:
+                            logger.log(f"⚠ Keyword vacía después de preparar: '{keyword}'", level="WARNING")
                             continue
 
                         search_tokens = self._build_keyword_search_tokens(
                             base_tokens, prepared_keyword
                         )
+                        logger.log(f"  Tokens IMAP: {search_tokens}", level="DEBUG")
+
                         status, data = imap.search(None, *search_tokens)
                         if status != 'OK' or not data:
+                            logger.log(f"  IMAP search falló: status={status}", level="DEBUG")
                             continue
                         ids = data[0].split()
                         if not ids:
+                            logger.log(f"  Sin resultados para '{keyword}'", level="DEBUG")
                             continue
                         logger.log(
-                            f"Encontrados {len(ids)} correos para la palabra clave '{keyword}' del {case_name}",
+                            f"✓ Encontrados {len(ids)} correos para '{keyword}' del {case_name}",
                             level="INFO",
                         )
                         for mid in ids:
