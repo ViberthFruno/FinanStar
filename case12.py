@@ -736,6 +736,7 @@ class Case:
 
     def _detect_header_row_xls(self, sheet) -> Optional[int]:
         """Detecta la fila de encabezados en una hoja .xls"""
+        # Primero intentar detectar en la fila 14 (estructura del caso 10)
         if sheet.nrows >= 14:
             normalized_values = []
             for col_idx in range(sheet.ncols):
@@ -751,6 +752,7 @@ class Case:
                 if has_fecha or (has_balance and has_creditos):
                     return 13
 
+        # Buscar una fila que contenga columnas clave del caso 12: "codigo", "revisar", "debitos", "creditos"
         max_rows = min(sheet.nrows, 50)
         for row_idx in range(max_rows):
             normalized_values = []
@@ -762,7 +764,19 @@ class Case:
             if not normalized_values:
                 continue
 
-            if any(value.startswith('fecha') for value in normalized_values):
+            # Prioridad 1: Buscar filas con "codigo" o "revisar"
+            has_codigo = any('codigo' in value for value in normalized_values)
+            has_revisar = any('revisar' in value for value in normalized_values)
+
+            if has_codigo or has_revisar:
+                return row_idx
+
+            # Prioridad 2: Buscar filas con columnas de datos típicas
+            has_debitos = any('debito' in value for value in normalized_values)
+            has_creditos = any('credito' in value for value in normalized_values)
+            has_descripcion = any('descripcion' in value for value in normalized_values)
+
+            if has_debitos and has_creditos and has_descripcion:
                 return row_idx
 
         return None
@@ -1168,6 +1182,7 @@ class Case:
 
     def _detect_header_row(self, sheet) -> Optional[int]:
         """Detecta la fila de encabezados en la hoja"""
+        # Primero intentar detectar en la fila 14 (estructura del caso 10)
         if sheet.max_row >= 14:
             normalized_values = [
                 self._normalize_text(cell.value)
@@ -1182,6 +1197,7 @@ class Case:
                 if has_fecha or (has_balance and has_creditos):
                     return 14
 
+        # Buscar una fila que contenga columnas clave del caso 12: "codigo", "revisar", "debitos", "creditos"
         max_rows = min(sheet.max_row, 50)
         for row_idx in range(1, max_rows + 1):
             normalized_values = [
@@ -1191,8 +1207,22 @@ class Case:
             ]
             if not normalized_values:
                 continue
-            if any(value.startswith('fecha') for value in normalized_values):
+
+            # Prioridad 1: Buscar filas con "codigo" o "revisar"
+            has_codigo = any('codigo' in value for value in normalized_values)
+            has_revisar = any('revisar' in value for value in normalized_values)
+
+            if has_codigo or has_revisar:
                 return row_idx
+
+            # Prioridad 2: Buscar filas con columnas de datos típicas
+            has_debitos = any('debito' in value for value in normalized_values)
+            has_creditos = any('credito' in value for value in normalized_values)
+            has_descripcion = any('descripcion' in value for value in normalized_values)
+
+            if has_debitos and has_creditos and has_descripcion:
+                return row_idx
+
         return None
 
     def _build_header_map(self, sheet, header_row: int) -> Dict[str, int]:
