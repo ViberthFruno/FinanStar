@@ -38,9 +38,11 @@ class CaseHandler:
     def _load_cases_explicit(self):
         """Carga casos mediante importación explícita (compatible con PyInstaller)"""
         try:
+            # Cargar casos en orden inverso para priorizar números más altos
+            # Esto evita que "caso 1" haga match antes que "caso 12"
             case_modules = [
-                'case1', 'case2', 'case3', 'case4', 'case5', 'case6',
-                'case7', 'case8', 'case9', 'case10', 'case11', 'case12'
+                'case12', 'case11', 'case10', 'case9', 'case8', 'case7',
+                'case6', 'case5', 'case4', 'case3', 'case2', 'case1'
             ]
 
             loaded_count = 0
@@ -144,6 +146,8 @@ class CaseHandler:
 
     def find_matching_case(self, subject, logger, allowed_cases=None):
         """Busca el primer caso que coincida con el asunto del email"""
+        import re
+
         allowed_set = set(allowed_cases) if allowed_cases else None
         for case_name, case_obj in self.cases.items():
             if allowed_set is not None and case_name not in allowed_set:
@@ -151,7 +155,10 @@ class CaseHandler:
             try:
                 keywords = case_obj.get_search_keywords()
                 for keyword in keywords:
-                    if keyword.lower() in subject.lower():
+                    # Usar word boundaries para matching exacto de palabras
+                    # Esto evita que "caso 1" haga match con "caso 10", "caso 11", "caso 12"
+                    pattern = r'\b' + re.escape(keyword.lower()) + r'\b'
+                    if re.search(pattern, subject.lower()):
                         logger.log(f"Caso encontrado: {case_name} para palabra clave: {keyword}", level="INFO")
                         return case_name
             except Exception as e:
