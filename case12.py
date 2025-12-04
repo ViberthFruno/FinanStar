@@ -343,7 +343,7 @@ class Case:
             return []
 
     def _extract_account_code(self, file_bytes: bytes, original_name: str, logger) -> Optional[str]:
-        """Extrae el código de cuenta de la celda B7"""
+        """Extrae el código de cuenta de la celda B4"""
         extension = os.path.splitext(original_name)[1].lower()
 
         try:
@@ -352,15 +352,15 @@ class Case:
                 workbook = xlrd.open_workbook(file_contents=file_bytes)
                 sheet = workbook.sheet_by_index(0)
 
-                if sheet.nrows >= 7 and sheet.ncols >= 2:
-                    product_value = sheet.cell_value(6, 1)
+                if sheet.nrows >= 4 and sheet.ncols >= 2:
+                    product_value = sheet.cell_value(3, 1)
                 else:
                     return None
             else:
                 from openpyxl import load_workbook
                 workbook = load_workbook(io.BytesIO(file_bytes), data_only=True)
                 sheet = workbook.active
-                product_cell = sheet.cell(row=7, column=2)
+                product_cell = sheet.cell(row=4, column=2)
                 product_value = product_cell.value
 
             if not product_value:
@@ -370,7 +370,7 @@ class Case:
 
             if account_code:
                 logger.log(
-                    f"Código de cuenta extraído de B7: '{account_code}'",
+                    f"Código de cuenta extraído de B4: '{account_code}'",
                     level="INFO",
                 )
 
