@@ -384,7 +384,7 @@ class Case:
             return None
 
     def _parse_account_code_from_product(self, product_value: Any) -> Optional[str]:
-        """Extrae el código de cuenta del valor de producto en B7"""
+        """Extrae el código de cuenta del valor de producto en B4"""
         if not product_value:
             return None
 
@@ -735,11 +735,12 @@ class Case:
             return None
 
     def _detect_header_row_xls(self, sheet) -> Optional[int]:
-        """Detecta la fila de encabezados en una hoja .xls"""
-        if sheet.nrows >= 14:
+        """Detecta la fila de encabezados en una hoja .xls (fila 7)"""
+        # Primero verificar en fila 7 (índice 6)
+        if sheet.nrows >= 7:
             normalized_values = []
             for col_idx in range(sheet.ncols):
-                cell_value = sheet.cell_value(13, col_idx)
+                cell_value = sheet.cell_value(6, col_idx)
                 if isinstance(cell_value, str):
                     normalized_values.append(self._normalize_text(cell_value))
 
@@ -747,10 +748,13 @@ class Case:
                 has_fecha = any('fecha' in value for value in normalized_values)
                 has_balance = any('balance' in value for value in normalized_values)
                 has_creditos = any('credito' in value for value in normalized_values)
+                has_codigo = any('codigo' in value for value in normalized_values)
+                has_revisar = any('revisar' in value for value in normalized_values)
 
-                if has_fecha or (has_balance and has_creditos):
-                    return 13
+                if has_fecha or (has_balance and has_creditos) or has_codigo or has_revisar:
+                    return 6
 
+        # Si no se encuentra en fila 7, buscar en las primeras filas
         max_rows = min(sheet.nrows, 50)
         for row_idx in range(max_rows):
             normalized_values = []
@@ -1167,21 +1171,25 @@ class Case:
         return f"{base}_{safe_account_name}_{file_type}_{timestamp}.xlsx"
 
     def _detect_header_row(self, sheet) -> Optional[int]:
-        """Detecta la fila de encabezados en la hoja"""
-        if sheet.max_row >= 14:
+        """Detecta la fila de encabezados en la hoja (fila 7)"""
+        # Primero verificar en fila 7
+        if sheet.max_row >= 7:
             normalized_values = [
                 self._normalize_text(cell.value)
-                for cell in sheet[14]
+                for cell in sheet[7]
                 if isinstance(cell.value, str)
             ]
             if normalized_values:
                 has_fecha = any('fecha' in value for value in normalized_values)
                 has_balance = any('balance' in value for value in normalized_values)
                 has_creditos = any('credito' in value for value in normalized_values)
+                has_codigo = any('codigo' in value for value in normalized_values)
+                has_revisar = any('revisar' in value for value in normalized_values)
 
-                if has_fecha or (has_balance and has_creditos):
-                    return 14
+                if has_fecha or (has_balance and has_creditos) or has_codigo or has_revisar:
+                    return 7
 
+        # Si no se encuentra en fila 7, buscar en las primeras filas
         max_rows = min(sheet.max_row, 50)
         for row_idx in range(1, max_rows + 1):
             normalized_values = [
