@@ -326,8 +326,22 @@ class EmailManager:
                 candidate_case_map: Dict[bytes, Set[str]] = {}
 
                 # Ejecutar búsqueda específica por palabra clave para cada caso habilitado
+                # IMPORTANTE: Buscar en orden inverso (case12 primero) para evitar que
+                # "Caso 1" haga match con "Caso 12" en la búsqueda IMAP (que usa substring)
                 logger.log("=== INICIANDO BÚSQUEDA IMAP POR KEYWORDS ===", level="INFO")
-                for case_name in allowed_cases:
+
+                # Ordenar casos en orden inverso: case12, case11, ..., case1
+                def case_sort_key(case_name):
+                    # Extraer el número del case (case1 -> 1, case12 -> 12)
+                    try:
+                        return -int(case_name.replace('case', ''))
+                    except:
+                        return 0
+
+                sorted_cases = sorted(allowed_cases, key=case_sort_key)
+                logger.log(f"Orden de búsqueda IMAP: {sorted_cases}", level="INFO")
+
+                for case_name in sorted_cases:
                     keywords = case_keywords.get(case_name, [])
                     if not keywords:
                         logger.log(f"⚠ {case_name}: NO tiene keywords configuradas", level="WARNING")
@@ -359,7 +373,14 @@ class EmailManager:
                             level="INFO",
                         )
                         for mid in ids:
-                            candidate_case_map.setdefault(mid, set()).add(case_name)
+                            # Solo agregar el caso si el email NO está ya asignado
+                            # Como iteramos en orden inverso (case12 primero), el primero que encuentra gana
+                            if mid not in candidate_case_map:
+                                candidate_case_map[mid] = set()
+                                candidate_case_map[mid].add(case_name)
+                                logger.log(f"  Email {mid.decode()[:20]}... asignado a {case_name}", level="DEBUG")
+                            else:
+                                logger.log(f"  Email {mid.decode()[:20]}... YA asignado a {candidate_case_map[mid]}, ignorando {case_name}", level="DEBUG")
 
                 # Si no hubo resultados por palabras clave, realizar una búsqueda general como respaldo
                 if not candidate_case_map:
