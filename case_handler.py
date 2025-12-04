@@ -149,22 +149,37 @@ class CaseHandler:
         import re
 
         allowed_set = set(allowed_cases) if allowed_cases else None
+
+        # Log inicial mejorado
+        logger.log(f"Buscando caso para: '{subject}'", level="INFO")
+        if allowed_set:
+            logger.log(f"Casos permitidos: {sorted(allowed_set)}", level="INFO")
+
         for case_name, case_obj in self.cases.items():
             if allowed_set is not None and case_name not in allowed_set:
                 continue
             try:
                 keywords = case_obj.get_search_keywords()
+                if not keywords:
+                    logger.log(f"⚠ {case_name}: SIN KEYWORDS configuradas", level="WARNING")
+                    continue
+
                 for keyword in keywords:
-                    # Usar word boundaries para matching exacto de palabras
-                    # Esto evita que "caso 1" haga match con "caso 10", "caso 11", "caso 12"
+                    # Log de cada intento
                     pattern = r'\b' + re.escape(keyword.lower()) + r'\b'
-                    if re.search(pattern, subject.lower()):
-                        logger.log(f"Caso encontrado: {case_name} para palabra clave: {keyword}", level="INFO")
+                    match = re.search(pattern, subject.lower())
+
+                    if match:
+                        logger.log(f"✓ MATCH: {case_name} | keyword: '{keyword}'", level="INFO")
                         return case_name
+                    else:
+                        logger.log(f"  ✗ no match: {case_name} | keyword: '{keyword}'", level="DEBUG")
+
             except Exception as e:
                 logger.log(f"Error al verificar caso {case_name}: {str(e)}", level="ERROR")
                 continue
 
+        logger.log("⚠ NO SE ENCONTRÓ NINGÚN CASO MATCHING", level="WARNING")
         return None
 
     def reload_cases(self):
@@ -187,6 +202,13 @@ class CaseHandler:
                     cleaned = keyword.strip()
                     if cleaned:
                         cleaned_keywords.append(cleaned)
+
+                # Log para debugging
+                if cleaned_keywords:
+                    print(f"Keywords para {case_name}: {cleaned_keywords}")
+                else:
+                    print(f"⚠ WARNING: {case_name} NO tiene keywords configuradas")
+
             except Exception as e:
                 print(f"Error al obtener palabras clave para {case_name}: {str(e)}")
                 cleaned_keywords = []
