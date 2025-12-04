@@ -1,0 +1,13 @@
+# FinanStar Bot - Dependencias del proyecto
+# Instalación: pip install -r requirements.txt
+
+# Librerías para procesamiento de archivos Excel
+openpyxl>=3.1.2  # Para archivos .xlsx (Excel 2007+)
+xlrd>=2.0.1      # Para archivos .xls antiguos (Excel 97-2003)
+
+# Nota: Las siguientes librerías vienen incluidas con Python y no necesitan instalación:
+# - tkinter (interfaz gráfica)
+# - smtplib, imaplib, ssl (manejo de correos electrónicos)
+# - email (procesamiento de correos)
+# - json (manejo de configuración)
+# - datetime, typing, re, os, io, unicodedata, zipfile (utilidades estándar)
