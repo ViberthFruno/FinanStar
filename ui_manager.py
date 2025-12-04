@@ -2193,6 +2193,8 @@ class UIManager:
                     search_titles.append(search_params['caso10'].strip())
                 if search_params.get('caso11', '').strip():
                     search_titles.append(search_params['caso11'].strip())
+                if search_params.get('caso12', '').strip():
+                    search_titles.append(search_params['caso12'].strip())
 
                 if search_titles:
                     self.email_manager.check_and_process_emails(
